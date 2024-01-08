@@ -19,19 +19,35 @@ def generate_launch_description():
         )]), launch_arguments={'use_sim_time': 'true'}.items()
     )
 
+    twist_mux_params = os.path.join(get_package_share_directory(package_name), 'config', 'twist_mux.yaml')
+    twist_mux = Node(
+        package="twist_mux",
+        executable="twist_mux", 
+        parameters=[twist_mux_params, {'use_sim_time':True}],
+        remappings=[('/cmd_vel_out','/diff_cont/cmd_vel_unstamped')]
+    )
+
     #Include the Gazebo launch file
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([os.path.join(
-            get_package_share_directory('gazebo_ros'), 'launch',
-            'gazebo.launch.py' )]),
+            get_package_share_directory('gazebo_ros'), 'launch', 'gazebo.launch.py' )]),
     )
     
     #Run the spawner node from the gazebo_ros package. Entity only matters with multiple robots
     spawn_entity = Node(package='gazebo_ros', executable='spawn_entity.py',
                         arguments=['-topic', 'robot_description',
-                                   '-entity', 'my_bot'],
+                                   '-entity', 'car_bot'],
                                    output='screen')
     
+    #Run the telop keyboard node
+    teleop_node = Node(
+            package='teleop_twist_keyboard',
+            executable='teleop_twist_keyboard',
+            name='teleop_node',
+            output='screen',
+            prefix='xterm -e'
+         )
+
     #Launch rsp, gazebo and spawn_entity
     return LaunchDescription([
         rsp,
